@@ -13,4 +13,5 @@ Press Esc to cancel selecting a screen region.
 
 Available on...
 -----------------
-Will currently only work on Windows, because of the native hook code needed for listening to global key and mouse events.
+Available on Windows, Linux, and OS X, however it has only been tested on Windows.
+The availability is dependent on JNativeHook's support at https://github.com/kwhat/jnativehook
