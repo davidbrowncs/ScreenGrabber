@@ -3,7 +3,7 @@ Screen Grabber
 How to Use
 ---------------
 Just run the application, press ctrl first, then ` to start taking a screenshot.
-Then click and drag a region of the screen to select it.
+Then click and drag a region of the screen to select a region of the screen.
 
 Done!
 
