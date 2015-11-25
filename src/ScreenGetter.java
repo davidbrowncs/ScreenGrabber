@@ -43,7 +43,6 @@ public class ScreenGetter implements ClipboardOwner
 	private JPanel debugPanel;
 
 	private boolean primed = false;
-
 	private boolean debugMode;
 
 	public ScreenGetter(boolean debug)
@@ -159,9 +158,7 @@ public class ScreenGetter implements ClipboardOwner
 		{
 			capture = new Robot().createScreenCapture(screenRect);
 		} catch (AWTException e)
-		{
-			e.printStackTrace();
-		}
+		{ /* Oh well, probably another Screen getter running */}
 		img = capture;
 	}
 
@@ -217,8 +214,6 @@ public class ScreenGetter implements ClipboardOwner
 				{
 					private double xOffset = bounds.getX();
 					private double yOffset = bounds.getY();
-					private double width = bounds.getWidth();
-					private double height = bounds.getHeight();
 
 					@Override
 					public void paint(Graphics gr)
@@ -302,10 +297,9 @@ public class ScreenGetter implements ClipboardOwner
 		@Override
 		public boolean isDataFlavorSupported(DataFlavor flavor)
 		{
-			DataFlavor[] flavors = getTransferDataFlavors();
-			for (int i = 0; i < flavors.length; i++)
+			for (DataFlavor f : getTransferDataFlavors())
 			{
-				if (flavor.equals(flavors[i]))
+				if (flavor.equals(f))
 				{
 					return true;
 				}

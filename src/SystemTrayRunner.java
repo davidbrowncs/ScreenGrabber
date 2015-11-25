@@ -10,7 +10,6 @@ import javax.imageio.ImageIO;
 
 public class SystemTrayRunner
 {
-	private TrayIcon trayIcon;
 	private PopupMenu menu;
 
 	public SystemTrayRunner()
