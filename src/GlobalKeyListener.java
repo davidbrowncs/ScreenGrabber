@@ -4,7 +4,6 @@ import org.jnativehook.keyboard.NativeKeyListener;
 public class GlobalKeyListener implements NativeKeyListener
 {
 	private ScreenGetter g;
-
 	private boolean ctrlPressed = false;
 
 	public GlobalKeyListener(ScreenGetter g)
@@ -19,10 +18,10 @@ public class GlobalKeyListener implements NativeKeyListener
 		{
 			g.prime(false);
 			g.hideWindow();
-		} else if (arg0.getKeyCode() == 29)
+		} else if (arg0.getKeyCode() == NativeKeyEvent.VC_CONTROL_L || arg0.getKeyCode() == NativeKeyEvent.VC_CONTROL_R)
 		{
 			ctrlPressed = true;
-		} else if (arg0.getKeyCode() == 125)
+		} else if (arg0.getKeyCode() == NativeKeyEvent.VC_YEN)
 		{
 			if (ctrlPressed)
 			{
@@ -35,7 +34,7 @@ public class GlobalKeyListener implements NativeKeyListener
 	@Override
 	public void nativeKeyReleased(NativeKeyEvent arg0)
 	{
-		if (arg0.getKeyCode() == 29)
+		if (arg0.getKeyCode() == NativeKeyEvent.VC_CONTROL_L || arg0.getKeyCode() == NativeKeyEvent.VC_CONTROL_R)
 		{
 			ctrlPressed = false;
 		}
@@ -43,8 +42,6 @@ public class GlobalKeyListener implements NativeKeyListener
 
 	@Override
 	public void nativeKeyTyped(NativeKeyEvent arg0)
-	{
-
-	}
+	{}
 
 }
