@@ -1,3 +1,4 @@
+package app;
 import java.io.InputStream;
 
 public final class ResourceLoader

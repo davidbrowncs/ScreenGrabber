@@ -1,3 +1,6 @@
+
+package app;
+
 import java.awt.AWTException;
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -21,6 +24,10 @@ import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,8 +36,15 @@ import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
+import listening.GlobalKeyListener;
+import listening.MouseListener;
+
 import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
+
+import fileHandling.Configuration;
+import fileHandling.FileHandler;
+import fileHandling.ImageWriter;
 
 public class ScreenGetter implements ClipboardOwner
 {
@@ -44,6 +58,13 @@ public class ScreenGetter implements ClipboardOwner
 
 	private boolean primed = false;
 	private boolean debugMode;
+
+	private List<BufferedImage> imageHistory;
+	private Configuration configuration = FileHandler.readConfiguration();
+	private Executor executor = Executors.newSingleThreadExecutor();
+	private Runnable periodicBackupTask;
+	private boolean periodicBackupRunning = configuration.isPeriodicBackup();
+	private Object periodicBackupRunningLock = new Object();
 
 	public ScreenGetter(boolean debug)
 	{
@@ -60,6 +81,22 @@ public class ScreenGetter implements ClipboardOwner
 	public boolean primed()
 	{
 		return primed;
+	}
+
+	private boolean periodicBackupRunning()
+	{
+		synchronized (periodicBackupRunningLock)
+		{
+			return periodicBackupRunning;
+		}
+	}
+
+	private void setPeriodicBackupRunning(boolean b)
+	{
+		synchronized (periodicBackupRunningLock)
+		{
+			periodicBackupRunning = b;
+		}
 	}
 
 	public void prime(boolean b)
@@ -144,6 +181,22 @@ public class ScreenGetter implements ClipboardOwner
 		TransferableImage trans = new TransferableImage(img);
 		Clipboard c = Toolkit.getDefaultToolkit().getSystemClipboard();
 		c.setContents(trans, this);
+		imageHistory.add(img);
+		if (configuration.isImmediateBackup())
+		{
+			executor.execute(() ->
+			{
+				ImageWriter.writeImage(configuration, img);
+				imageHistory.remove(img);
+			});
+		}
+
+		if (configuration.isPeriodicBackup() && !periodicBackupRunning())
+		{
+			executor.execute(periodicBackupTask);
+			setPeriodicBackupRunning(true);
+		}
+
 		if (debugMode)
 		{
 			debugPanel.repaint();
@@ -199,7 +252,29 @@ public class ScreenGetter implements ClipboardOwner
 			debugFrame.setVisible(true);
 		}
 
+		imageHistory = Collections.synchronizedList(new ArrayList<BufferedImage>());
 		new SystemTrayRunner();
+
+		periodicBackupTask = new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				while (configuration.isPeriodicBackup())
+				{
+					for (BufferedImage img : imageHistory)
+					{
+						ImageWriter.writeImage(configuration, img);
+					}
+				}
+				setPeriodicBackupRunning(false);
+			}
+		};
+
+		if (configuration.isPeriodicBackup())
+		{
+			executor.execute(periodicBackupTask);
+		}
 
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice[] gs = ge.getScreenDevices();

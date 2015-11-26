@@ -1,5 +1,8 @@
+package listening;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
+
+import app.ScreenGetter;
 
 public class GlobalKeyListener implements NativeKeyListener
 {
