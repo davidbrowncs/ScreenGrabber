@@ -35,6 +35,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import listening.GlobalKeyListener;
 import listening.MouseListener;
@@ -66,11 +68,14 @@ public class ScreenGetter implements ClipboardOwner
 	private boolean periodicBackupRunning = configuration.isPeriodicBackup();
 	private Object periodicBackupRunningLock = new Object();
 
+	private GlobalKeyListener listener;
+
 	public ScreenGetter(boolean debug)
 	{
 		this.debugMode = debug;
-		init();
+		setLookAndFeel();
 		addListeners();
+		init();
 	}
 
 	public ScreenGetter()
@@ -81,6 +86,15 @@ public class ScreenGetter implements ClipboardOwner
 	public boolean primed()
 	{
 		return primed;
+	}
+
+	private void setLookAndFeel()
+	{
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
+		{}
 	}
 
 	private boolean periodicBackupRunning()
@@ -111,7 +125,7 @@ public class ScreenGetter implements ClipboardOwner
 
 	private void addListeners()
 	{
-		GlobalKeyListener l = new GlobalKeyListener(this);
+		listener = new GlobalKeyListener(this, configuration);
 		try
 		{
 			GlobalScreen.registerNativeHook();
@@ -121,7 +135,7 @@ public class ScreenGetter implements ClipboardOwner
 		}
 		MouseListener m = new MouseListener(this);
 
-		GlobalScreen.addNativeKeyListener(l);
+		GlobalScreen.addNativeKeyListener(listener);
 		GlobalScreen.addNativeMouseListener(m);
 		GlobalScreen.addNativeMouseMotionListener(m);
 
@@ -253,7 +267,7 @@ public class ScreenGetter implements ClipboardOwner
 		}
 
 		imageHistory = Collections.synchronizedList(new ArrayList<BufferedImage>());
-		new SystemTrayRunner();
+		new SystemTrayRunner(configuration, listener);
 
 		periodicBackupTask = new Runnable()
 		{
@@ -262,9 +276,23 @@ public class ScreenGetter implements ClipboardOwner
 			{
 				while (configuration.isPeriodicBackup())
 				{
+					System.out.println("Periodic backup in progress");
 					for (BufferedImage img : imageHistory)
 					{
 						ImageWriter.writeImage(configuration, img);
+					}
+
+					for (int i = imageHistory.size() - 1; i >= 0; i--)
+					{
+						imageHistory.remove(i);
+					}
+
+					try
+					{
+						Thread.sleep(configuration.getBackupDelay());
+					} catch (InterruptedException e)
+					{
+						e.printStackTrace();
 					}
 				}
 				setPeriodicBackupRunning(false);

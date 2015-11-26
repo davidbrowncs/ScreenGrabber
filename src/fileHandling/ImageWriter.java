@@ -16,6 +16,7 @@ public final class ImageWriter
 	{
 		try
 		{
+			FileHandler.ensureHistoryFolder(c);
 			Date date = new Date();
 			DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 			String timeStamp = format.format(date);

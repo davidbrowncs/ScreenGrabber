@@ -13,6 +13,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 
+import listening.GlobalKeyListener;
 import fileHandling.Configuration;
 import fileHandling.FileHandler;
 
@@ -21,13 +22,13 @@ public class SystemTrayRunner
 	private PopupMenu menu;
 	private Configuration config;
 
-	public SystemTrayRunner(Configuration c)
+	public SystemTrayRunner(Configuration c, GlobalKeyListener l)
 	{
 		this.config = c;
-		init();
+		init(l);
 	}
 
-	private void init()
+	private void init(GlobalKeyListener l)
 	{
 		menu = new PopupMenu();
 		MenuItem item = new MenuItem("Options");
@@ -35,8 +36,9 @@ public class SystemTrayRunner
 		{
 			JFrame tmpFrame = new JFrame("Options");
 			tmpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-			OptionsPane pane = new OptionsPane(config);
+			OptionsPane pane = new OptionsPane(config, l);
 			tmpFrame.add(pane);
+			tmpFrame.pack();
 			tmpFrame.setLocationRelativeTo(null);
 			tmpFrame.addWindowListener(new WindowAdapter()
 			{
@@ -48,6 +50,7 @@ public class SystemTrayRunner
 			});
 			tmpFrame.setVisible(true);
 		});
+		menu.add(item);
 
 		item = new MenuItem("Exit");
 		menu.add(item);

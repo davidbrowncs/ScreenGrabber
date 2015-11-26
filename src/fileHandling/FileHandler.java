@@ -21,14 +21,7 @@ public final class FileHandler
 			{
 				Unmarshaller u = c.createUnmarshaller();
 				Configuration config = (Configuration) u.unmarshal(file);
-				File historyFolder = new File(config.getBackupPath());
-				if (!historyFolder.exists())
-				{
-					historyFolder.mkdir();
-				} else if (historyFolder.exists() && !historyFolder.isDirectory())
-				{
-					System.err.println("History folder path exists and is not a folder");
-				}
+				ensureHistoryFolder(config);
 				return config;
 			} else if (!file.exists())
 			{
@@ -36,17 +29,10 @@ public final class FileHandler
 				m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
 				Configuration config = Configuration.getDefaultConfiguration();
+
+				System.out.println(config);
 				m.marshal(config, file);
-
-				File historyFolder = new File(config.getBackupPath());
-				if (!historyFolder.exists())
-				{
-					historyFolder.mkdir();
-				} else if (historyFolder.exists() && !historyFolder.isDirectory())
-				{
-					System.err.println("History folder path exists and is not a folder");
-				}
-
+				ensureHistoryFolder(config);
 				return config;
 			}
 
@@ -55,6 +41,18 @@ public final class FileHandler
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public static void ensureHistoryFolder(Configuration c)
+	{
+		File historyFolder = new File(c.getBackupPath());
+		if (!historyFolder.exists())
+		{
+			historyFolder.mkdir();
+		} else if (historyFolder.exists() && !historyFolder.isDirectory())
+		{
+			System.err.println("History folder path exists and is not a folder");
+		}
 	}
 
 	public static void writeConfiguration(Configuration c)

@@ -1,22 +1,35 @@
+
 package listening;
+
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
 import app.ScreenGetter;
+import fileHandling.Configuration;
 
 public class GlobalKeyListener implements NativeKeyListener
 {
 	private ScreenGetter g;
 	private boolean ctrlPressed = false;
+	private Configuration config;
+	private int lastKeyPressed;
 
-	public GlobalKeyListener(ScreenGetter g)
+	public GlobalKeyListener(ScreenGetter g, Configuration c)
 	{
 		this.g = g;
+		this.config = c;
+		lastKeyPressed = c.getOperatorKeyCode();
+	}
+
+	public synchronized int getLastKeyPressed()
+	{
+		return lastKeyPressed;
 	}
 
 	@Override
 	public void nativeKeyPressed(NativeKeyEvent arg0)
 	{
+		lastKeyPressed = arg0.getKeyCode();
 		if (arg0.getKeyCode() == NativeKeyEvent.VC_ESCAPE)
 		{
 			g.prime(false);
@@ -24,7 +37,7 @@ public class GlobalKeyListener implements NativeKeyListener
 		} else if (arg0.getKeyCode() == NativeKeyEvent.VC_CONTROL_L || arg0.getKeyCode() == NativeKeyEvent.VC_CONTROL_R)
 		{
 			ctrlPressed = true;
-		} else if (arg0.getKeyCode() == NativeKeyEvent.VC_YEN)
+		} else if (arg0.getKeyCode() == config.getOperatorKeyCode())
 		{
 			if (ctrlPressed)
 			{

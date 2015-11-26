@@ -1,7 +1,10 @@
 
 package fileHandling;
 
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+
+import org.jnativehook.keyboard.NativeKeyEvent;
 
 @XmlRootElement
 public class Configuration
@@ -14,11 +17,13 @@ public class Configuration
 	private static final boolean DEFAULT_PERIODIC_BACKUP = false;
 	private static final boolean IMMEDIATE_BACKUP = true;
 	private static final String DEFAULT_BACKUP_PATH = PathGetter.getDefaultDirectory() + "/ScreenGetterHistory";
+	private static final int DEFAULT_OPERATOR_KEY = NativeKeyEvent.VC_SEMICOLON;
 
 	private long backupDelay;
 	private boolean periodicBackup;
 	private boolean immediateBackup;
 	private String backupPath;
+	private int operatorKey;
 
 	public static Configuration getDefaultConfiguration()
 	{
@@ -27,9 +32,11 @@ public class Configuration
 		c.setPeriodicBackup(DEFAULT_PERIODIC_BACKUP);
 		c.setImmediateBackup(IMMEDIATE_BACKUP);
 		c.setBackupPath(DEFAULT_BACKUP_PATH);
+		c.setOperatorKey(DEFAULT_OPERATOR_KEY);
 		return c;
 	}
 
+	@XmlElement(name = "backupDelay")
 	public synchronized long getBackupDelay()
 	{
 		return backupDelay;
@@ -40,6 +47,7 @@ public class Configuration
 		this.backupDelay = backupDelay;
 	}
 
+	@XmlElement(name = "periodicBackup")
 	public synchronized boolean isPeriodicBackup()
 	{
 		return periodicBackup;
@@ -50,6 +58,7 @@ public class Configuration
 		this.periodicBackup = periodicBackup;
 	}
 
+	@XmlElement(name = "backupPath")
 	public synchronized String getBackupPath()
 	{
 		return backupPath;
@@ -60,6 +69,7 @@ public class Configuration
 		this.backupPath = backupPath;
 	}
 
+	@XmlElement(name = "immateBackup")
 	public synchronized boolean isImmediateBackup()
 	{
 		return immediateBackup;
@@ -80,10 +90,22 @@ public class Configuration
 		return CONFIG_PATH;
 	}
 
+	@XmlElement(name = "operatorKey")
+	public synchronized int getOperatorKeyCode()
+	{
+		return operatorKey;
+	}
+
+	public synchronized void setOperatorKey(int operatorKey)
+	{
+		System.out.println(operatorKey);
+		this.operatorKey = operatorKey;
+	}
+
 	@Override
 	public synchronized String toString()
 	{
 		return "[BackupDelay:" + backupDelay + ";PeriodicBackup:" + periodicBackup + ";ImmediateBackup:" + immediateBackup
-				+ ";BackupPath:" + backupPath + "]";
+				+ ";BackupPath:" + backupPath + ";OperatorKey:" + operatorKey + "]";
 	}
 }
