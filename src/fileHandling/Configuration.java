@@ -1,12 +1,15 @@
 
 package fileHandling;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.jnativehook.keyboard.NativeKeyEvent;
 
 @XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Configuration
 {
 	private static final String CONFIGURATION_FILE_NAME = "config.xml";
@@ -19,10 +22,19 @@ public class Configuration
 	private static final String DEFAULT_BACKUP_PATH = PathGetter.getDefaultDirectory() + "/ScreenGetterHistory";
 	private static final int DEFAULT_OPERATOR_KEY = NativeKeyEvent.VC_SEMICOLON;
 
+	@XmlElement(name = "backupDelay")
 	private long backupDelay;
+
+	@XmlElement(name = "periodicBackup")
 	private boolean periodicBackup;
+
+	@XmlElement(name = "backupPath")
 	private boolean immediateBackup;
+
+	@XmlElement(name = "immateBackup")
 	private String backupPath;
+
+	@XmlElement(name = "operatorKey")
 	private int operatorKey;
 
 	public static Configuration getDefaultConfiguration()
@@ -36,7 +48,6 @@ public class Configuration
 		return c;
 	}
 
-	@XmlElement(name = "backupDelay")
 	public synchronized long getBackupDelay()
 	{
 		return backupDelay;
@@ -47,7 +58,6 @@ public class Configuration
 		this.backupDelay = backupDelay;
 	}
 
-	@XmlElement(name = "periodicBackup")
 	public synchronized boolean isPeriodicBackup()
 	{
 		return periodicBackup;
@@ -58,7 +68,6 @@ public class Configuration
 		this.periodicBackup = periodicBackup;
 	}
 
-	@XmlElement(name = "backupPath")
 	public synchronized String getBackupPath()
 	{
 		return backupPath;
@@ -69,7 +78,6 @@ public class Configuration
 		this.backupPath = backupPath;
 	}
 
-	@XmlElement(name = "immateBackup")
 	public synchronized boolean isImmediateBackup()
 	{
 		return immediateBackup;
@@ -90,7 +98,6 @@ public class Configuration
 		return CONFIG_PATH;
 	}
 
-	@XmlElement(name = "operatorKey")
 	public synchronized int getOperatorKeyCode()
 	{
 		return operatorKey;

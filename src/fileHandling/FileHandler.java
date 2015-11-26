@@ -17,10 +17,12 @@ public final class FileHandler
 			File file = new File(Configuration.getConfigPath());
 			JAXBContext c = JAXBContext.newInstance(Configuration.class);
 
+			System.out.println(file.exists());
 			if (file.exists() && !file.isDirectory())
 			{
 				Unmarshaller u = c.createUnmarshaller();
 				Configuration config = (Configuration) u.unmarshal(file);
+				System.out.println(config);
 				ensureHistoryFolder(config);
 				return config;
 			} else if (!file.exists())
@@ -30,7 +32,6 @@ public final class FileHandler
 
 				Configuration config = Configuration.getDefaultConfiguration();
 
-				System.out.println(config);
 				m.marshal(config, file);
 				ensureHistoryFolder(config);
 				return config;
