@@ -1,15 +1,22 @@
+
 package fileHandling;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.filechooser.FileSystemView;
 
 public final class PathGetter
 {
+	private static Logger log = Logger.getAnonymousLogger();
+
 	private static String folder = ".screenGetter";
 	private static String OS;
 
@@ -18,6 +25,7 @@ public final class PathGetter
 		return FileSystemView.getFileSystemView().getDefaultDirectory().toString();
 	}
 
+	// DO NOT LOG IN HERE
 	public static String getSavePath()
 	{
 		String path = System.getProperty("user.home");
@@ -60,6 +68,8 @@ public final class PathGetter
 		File directory = new File(path);
 		File[] files = directory.listFiles();
 
+		log.logp(Level.INFO, PathGetter.class.getName(), "ensureFolderExists", "Searching files: " + Arrays.toString(files));
+
 		String pathSeparator = getPathSeparator();
 
 		boolean folderFound = false;
@@ -77,12 +87,17 @@ public final class PathGetter
 			{
 				folder = fileName;
 				folderFound = true;
+
+				log.logp(Level.INFO, PathGetter.class.getName(), "ensureFolderExists", "Found configuration folder " + fPth);
+
 				break;
 			}
 		}
 
 		if (!folderFound)
 		{
+			log.logp(Level.INFO, PathGetter.class.getName(), "ensureFolderExists",
+					"Could not find configuration folder, creating now");
 			File finalFolder = new File(path + pathSeparator + folder);
 			int counter = 0;
 			while (true)
@@ -94,15 +109,23 @@ public final class PathGetter
 				} else
 				{
 					finalFolder.mkdir();
+
+					log.logp(Level.INFO, PathGetter.class.getName(), "ensureFolderExists", "Folder being created: ",
+							finalFolder);
+
 					if (isWindows())
 					{
 						Path tmpPath = Paths.get(finalFolder.toURI());
 						try
 						{
 							Files.setAttribute(tmpPath, "dos:hidden", true, LinkOption.NOFOLLOW_LINKS);
+							log.logp(Level.INFO, PathGetter.class.getName(), "ensureFolderExists",
+									"Operating system is windows and the folder " + finalFolder.toString()
+											+ " was set to hidden");
 						} catch (IOException e)
 						{
-							e.printStackTrace();
+							log.logp(Level.WARNING, PathGetter.class.getName(), "ensureFolderExists",
+									"Could not set the folder to hidden on dos ", e);
 						}
 					}
 					break;

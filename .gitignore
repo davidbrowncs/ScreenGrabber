@@ -1,1 +1,6 @@
 /bin/
+miglayout-src.zip
+.classpath
+.project
+.settings/*
+src/fileHandling/SendMail.java

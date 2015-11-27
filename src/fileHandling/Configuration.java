@@ -8,10 +8,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.jnativehook.keyboard.NativeKeyEvent;
 
+import app.MyLogger;
+
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Configuration
 {
+	private static MyLogger log = new MyLogger(Configuration.class);
+
 	private static final String CONFIGURATION_FILE_NAME = "config.xml";
 	private static final String CONFIG_PATH = PathGetter.getSavePath() + "/" + CONFIGURATION_FILE_NAME;
 
@@ -31,7 +35,7 @@ public class Configuration
 	@XmlElement(name = "backupPath")
 	private boolean immediateBackup;
 
-	@XmlElement(name = "immateBackup")
+	@XmlElement(name = "immediateBackup")
 	private String backupPath;
 
 	@XmlElement(name = "operatorKey")
@@ -45,6 +49,7 @@ public class Configuration
 		c.setImmediateBackup(IMMEDIATE_BACKUP);
 		c.setBackupPath(DEFAULT_BACKUP_PATH);
 		c.setOperatorKey(DEFAULT_OPERATOR_KEY);
+		log.info("Returning default configuration", c);
 		return c;
 	}
 

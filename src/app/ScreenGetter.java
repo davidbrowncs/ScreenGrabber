@@ -23,12 +23,14 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import javax.swing.JFrame;
@@ -45,11 +47,14 @@ import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 
 import fileHandling.Configuration;
+import fileHandling.DumpSender;
 import fileHandling.FileHandler;
 import fileHandling.ImageWriter;
 
 public class ScreenGetter implements ClipboardOwner
 {
+	private static final MyLogger log = new MyLogger(ScreenGetter.class);
+
 	private ArrayList<JWindow> windows = new ArrayList<>();
 	private boolean frameVisible;
 	private Object frameVisibleLock = new Object();
@@ -70,15 +75,27 @@ public class ScreenGetter implements ClipboardOwner
 
 	private GlobalKeyListener listener;
 
-	public ScreenGetter(boolean debug)
+	public ScreenGetter(boolean debug) throws Exception
 	{
+		addShutdownHook();
 		this.debugMode = debug;
+		log.info("Starting up");
+		log.info("¸.·´¯`·.´¯`·.¸¸.·´¯`·.¸><(((º>");
+		log.debug("Debug mode: " + debug);
 		setLookAndFeel();
 		addListeners();
 		init();
 	}
 
-	public ScreenGetter()
+	private void addShutdownHook()
+	{
+		Runtime.getRuntime().addShutdownHook(new Thread(() ->
+		{
+			MyLogger.close();
+		}));
+	}
+
+	public ScreenGetter() throws Exception
 	{
 		this(false);
 	}
@@ -94,13 +111,16 @@ public class ScreenGetter implements ClipboardOwner
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
-		{}
+		{
+			log.warning("Could not set the look and feel");
+		}
 	}
 
 	private boolean periodicBackupRunning()
 	{
 		synchronized (periodicBackupRunningLock)
 		{
+			log.debug("Periodic backup running: ", periodicBackupRunning);
 			return periodicBackupRunning;
 		}
 	}
@@ -120,7 +140,15 @@ public class ScreenGetter implements ClipboardOwner
 
 	public static void main(String[] args)
 	{
-		ScreenGetter g = new ScreenGetter(false);
+		try
+		{
+			ScreenGetter g = new ScreenGetter(false);
+		} catch (Exception e)
+		{
+			log.severe("Unexpected exception caught: " + e.getMessage());
+			new DumpSender(e);
+		}
+
 	}
 
 	private void addListeners()
@@ -138,9 +166,7 @@ public class ScreenGetter implements ClipboardOwner
 		GlobalScreen.addNativeKeyListener(listener);
 		GlobalScreen.addNativeMouseListener(m);
 		GlobalScreen.addNativeMouseMotionListener(m);
-
-		Logger logger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
-		logger.setLevel(Level.WARNING);
+		log.info("Listeners added");
 	}
 
 	public void createRect(int x, int y)
@@ -152,6 +178,7 @@ public class ScreenGetter implements ClipboardOwner
 	{
 		SwingUtilities.invokeLater(() ->
 		{
+			log.debug("Hiding windows");
 			for (JWindow window : windows)
 			{
 				window.setVisible(false);
@@ -163,6 +190,7 @@ public class ScreenGetter implements ClipboardOwner
 	{
 		SwingUtilities.invokeLater(() ->
 		{
+			log.debug("Setting the windows visible");
 			for (JWindow window : windows)
 			{
 				window.setVisible(true);
@@ -180,6 +208,7 @@ public class ScreenGetter implements ClipboardOwner
 
 	public void releaseRect()
 	{
+		log.debug("Rectangle reset");
 		rect = null;
 	}
 
@@ -196,8 +225,12 @@ public class ScreenGetter implements ClipboardOwner
 		Clipboard c = Toolkit.getDefaultToolkit().getSystemClipboard();
 		c.setContents(trans, this);
 		imageHistory.add(img);
+
+		log.debug("Added image to list: ", img);
+
 		if (configuration.isImmediateBackup())
 		{
+			log.debug("Immediately writing image to file system");
 			executor.execute(() ->
 			{
 				ImageWriter.writeImage(configuration, img);
@@ -207,6 +240,7 @@ public class ScreenGetter implements ClipboardOwner
 
 		if (configuration.isPeriodicBackup() && !periodicBackupRunning())
 		{
+			log.debug("Starting periodic backing up, as the configuration must have changed");
 			executor.execute(periodicBackupTask);
 			setPeriodicBackupRunning(true);
 		}
@@ -221,11 +255,17 @@ public class ScreenGetter implements ClipboardOwner
 	{
 		Rectangle screenRect = rect.getRect();
 		BufferedImage capture = null;
+		if (screenRect.getWidth() <= 0 || screenRect.getHeight() <= 0)
+		{
+			return;
+		}
 		try
 		{
 			capture = new Robot().createScreenCapture(screenRect);
 		} catch (AWTException e)
-		{ /* Oh well, probably another Screen getter running */}
+		{
+			log.warning("Was unable to capture image from screen", e);
+		}
 		img = capture;
 	}
 
@@ -233,8 +273,10 @@ public class ScreenGetter implements ClipboardOwner
 	{
 		rect.setUpdatingX(x);
 		rect.setUpdatingY(y);
+		log.debug("Updating rectangle: X: " + x + " Y: " + y);
 		if (windowVisible())
 		{
+			log.debug("Repainting windows");
 			for (JWindow window : windows)
 			{
 				window.repaint();
@@ -243,10 +285,11 @@ public class ScreenGetter implements ClipboardOwner
 	}
 
 	@SuppressWarnings("serial")
-	private void init()
+	private void init() throws Exception
 	{
 		if (debugMode)
 		{
+			log.debug("Creating debug window");
 			JFrame debugFrame = new JFrame("Debug");
 			debugPanel = new JPanel()
 			{
@@ -261,6 +304,7 @@ public class ScreenGetter implements ClipboardOwner
 				}
 			};
 			debugFrame.setBounds(500, 0, 500, 500);
+			log.debug("Set frame bounds X: " + 500 + " Y: " + 0 + " width: " + 500 + " height: " + 500);
 			debugFrame.add(debugPanel);
 			debugFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			debugFrame.setVisible(true);
@@ -276,7 +320,6 @@ public class ScreenGetter implements ClipboardOwner
 			{
 				while (configuration.isPeriodicBackup())
 				{
-					System.out.println("Periodic backup in progress");
 					for (BufferedImage img : imageHistory)
 					{
 						ImageWriter.writeImage(configuration, img);
@@ -292,7 +335,7 @@ public class ScreenGetter implements ClipboardOwner
 						Thread.sleep(configuration.getBackupDelay());
 					} catch (InterruptedException e)
 					{
-						e.printStackTrace();
+						log.warning("Periodic backup was interrupted on line 331");
 					}
 				}
 				setPeriodicBackupRunning(false);
@@ -301,11 +344,13 @@ public class ScreenGetter implements ClipboardOwner
 
 		if (configuration.isPeriodicBackup())
 		{
+			log.info("Periodic backup task started");
 			executor.execute(periodicBackupTask);
 		}
 
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice[] gs = ge.getScreenDevices();
+		log.info(gs.length + " screen devices found");
 		for (GraphicsDevice device : gs)
 		{
 			GraphicsConfiguration[] gcs = device.getConfigurations();
@@ -338,6 +383,7 @@ public class ScreenGetter implements ClipboardOwner
 							g.fillRect(x, y, rW, rH);
 
 							g.setComposite(original);
+							log.debug("Painting rectangle colour " + Color.CYAN.getRGB());
 							g.setColor(Color.CYAN);
 							g.drawRect(x, y, rW, rH);
 
@@ -378,6 +424,7 @@ public class ScreenGetter implements ClipboardOwner
 				});
 			}
 		}
+		throw new Exception("This is a test");
 	}
 
 	private class TransferableImage implements Transferable

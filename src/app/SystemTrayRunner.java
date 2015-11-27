@@ -21,6 +21,8 @@ import fileHandling.FileHandler;
 
 public class SystemTrayRunner
 {
+	private static MyLogger log = new MyLogger(SystemTrayRunner.class);
+
 	private PopupMenu menu;
 	private Configuration config;
 	private BufferedImage icon;
@@ -38,12 +40,13 @@ public class SystemTrayRunner
 			icon = ImageIO.read(ResourceLoader.load("images/icon.png"));
 		} catch (IOException e2)
 		{
-			e2.printStackTrace();
+			log.warning("init", "Could not load image from: images/icon.png");
 		}
 		menu = new PopupMenu();
 		MenuItem item = new MenuItem("Options");
 		item.addActionListener((e) ->
 		{
+			log.debug("Showing the options window");
 			JFrame tmpFrame = new JFrame("Options");
 			tmpFrame.setResizable(false);
 			tmpFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -57,6 +60,7 @@ public class SystemTrayRunner
 				@Override
 				public void windowClosing(WindowEvent e)
 				{
+					log.info("Closing window and saving configuration: " + config.toString());
 					FileHandler.writeConfiguration(config);
 				}
 			});
@@ -68,6 +72,7 @@ public class SystemTrayRunner
 		menu.add(item);
 		item.addActionListener((e) ->
 		{
+			log.info("Closing application");
 			System.exit(0);
 		});
 
@@ -78,7 +83,7 @@ public class SystemTrayRunner
 			SystemTray.getSystemTray().add(icon);
 		} catch (AWTException e1)
 		{
-			e1.printStackTrace();
+			log.severe("Was unable to create a TrayIcon", e1);
 		}
 
 	}

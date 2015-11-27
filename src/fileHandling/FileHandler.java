@@ -8,8 +8,12 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import app.MyLogger;
+
 public final class FileHandler
 {
+	private static final MyLogger log = new MyLogger(FileHandler.class);
+
 	public static Configuration readConfiguration()
 	{
 		try
@@ -17,20 +21,27 @@ public final class FileHandler
 			File file = new File(Configuration.getConfigPath());
 			JAXBContext c = JAXBContext.newInstance(Configuration.class);
 
-			System.out.println(file.exists());
 			if (file.exists() && !file.isDirectory())
 			{
+				log.info("Found configuration file " + file.toString());
+
 				Unmarshaller u = c.createUnmarshaller();
 				Configuration config = (Configuration) u.unmarshal(file);
-				System.out.println(config);
+
+				log.info("Configuration found " + config.toString());
+
 				ensureHistoryFolder(config);
 				return config;
 			} else if (!file.exists())
 			{
+				log.info("Could not find configuration file");
+
 				Marshaller m = c.createMarshaller();
 				m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
 				Configuration config = Configuration.getDefaultConfiguration();
+
+				log.info("Created default configuration " + config.toString());
 
 				m.marshal(config, file);
 				ensureHistoryFolder(config);
@@ -49,10 +60,11 @@ public final class FileHandler
 		File historyFolder = new File(c.getBackupPath());
 		if (!historyFolder.exists())
 		{
+			log.info("Image history folder does not exist, creating it now " + historyFolder.toString());
 			historyFolder.mkdir();
 		} else if (historyFolder.exists() && !historyFolder.isDirectory())
 		{
-			System.err.println("History folder path exists and is not a folder");
+			log.warning("History folder exists already and is not a folder");
 		}
 	}
 
@@ -64,11 +76,12 @@ public final class FileHandler
 			Marshaller m = context.createMarshaller();
 			m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
+			log.info("Writing configuration to file system " + c.toString());
 			m.marshal(c, new File(Configuration.getConfigPath()));
 
 		} catch (JAXBException e)
 		{
-			e.printStackTrace();
+			log.warning("Error when marshalling configuration " + e.getMessage());
 		}
 	}
 }

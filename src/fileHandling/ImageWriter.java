@@ -10,8 +10,12 @@ import java.util.Date;
 
 import javax.imageio.ImageIO;
 
+import app.MyLogger;
+
 public final class ImageWriter
 {
+	private static final MyLogger log = new MyLogger(ImageWriter.class);
+
 	public static void writeImage(Configuration c, BufferedImage img)
 	{
 		try
@@ -20,6 +24,7 @@ public final class ImageWriter
 			Date date = new Date();
 			DateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 			String timeStamp = format.format(date);
+
 			File file = new File(c.getBackupPath() + "/" + timeStamp + ".png");
 
 			int counter = 1;
@@ -28,10 +33,12 @@ public final class ImageWriter
 				file = new File(c.getBackupPath() + "/" + timeStamp + "(" + counter + ").png");
 				counter++;
 			}
+			log.info("Saving image to file: " + file.toString());
+
 			ImageIO.write(img, "png", file);
 		} catch (IOException e)
 		{
-			e.printStackTrace();
+			log.severe("Error when writing file " + e.getMessage());
 		}
 	}
 

@@ -26,6 +26,8 @@ import fileHandling.Configuration;
 
 public class OptionsPane extends JPanel
 {
+	private static MyLogger log = new MyLogger(OptionsPane.class);
+
 	private Configuration config;
 	private JCheckBox chckbxPeriodicBackup = null;
 	private GlobalKeyListener listener;
@@ -49,6 +51,7 @@ public class OptionsPane extends JPanel
 		JRadioButton rdbtnPeriodicBackup = new JRadioButton("Periodic Backup");
 		if (config.isPeriodicBackup())
 		{
+			log.debug("Setting periodic backup radio button selected");
 			rdbtnPeriodicBackup.setSelected(true);
 		}
 		rdbtnPeriodicBackup.addActionListener((e) ->
@@ -62,7 +65,7 @@ public class OptionsPane extends JPanel
 				group.clearSelection();
 				config.setPeriodicBackup(false);
 			}
-
+			log.debug("Periodic backup: " + config.isPeriodicBackup() + " immediate backup: " + config.isImmediateBackup());
 		});
 		add(rdbtnPeriodicBackup, "cell 0 1,alignx center");
 
@@ -77,11 +80,13 @@ public class OptionsPane extends JPanel
 			{
 				config.setImmediateBackup(rdbtnImmediateBackup.isSelected());
 				config.setPeriodicBackup(false);
+
 			} else
 			{
 				group.clearSelection();
 				config.setImmediateBackup(false);
 			}
+			log.debug("Periodic backup: " + config.isPeriodicBackup() + " immediate backup: " + config.isImmediateBackup());
 		});
 		add(rdbtnImmediateBackup, "cell 0 2,alignx center");
 
@@ -123,6 +128,7 @@ public class OptionsPane extends JPanel
 			int delay = Integer.parseInt(frmtdtxtfldBackupPeriod.getText().trim());
 			if (delay > 0 && delay <= 60)
 			{
+				log.info("Periodic backup delay set to: " + (delay * 1000));
 				config.setBackupDelay(delay * 1000);
 			}
 		});
@@ -150,6 +156,7 @@ public class OptionsPane extends JPanel
 				public void run()
 				{
 					newCode = prev;
+					log.debug("Previous key code: " + prev);
 					while (true)
 					{
 						newCode = listener.getLastKeyPressed();
@@ -158,10 +165,12 @@ public class OptionsPane extends JPanel
 							break;
 						}
 					}
+					log.debug("New key code: " + newCode);
 					config.setOperatorKey(newCode);
 					final int theKeyCode = newCode;
 					SwingUtilities.invokeLater(() ->
 					{
+						log.debug("Setting key text: " + NativeKeyEvent.getKeyText(theKeyCode));
 						lblCurrentKey.setText("Current key: " + NativeKeyEvent.getKeyText(theKeyCode));
 					});
 				}

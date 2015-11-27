@@ -4,11 +4,14 @@ package listening;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
+import app.MyLogger;
 import app.ScreenGetter;
 import fileHandling.Configuration;
 
 public class GlobalKeyListener implements NativeKeyListener
 {
+	private MyLogger log = new MyLogger(GlobalKeyListener.class);
+
 	private ScreenGetter g;
 	private boolean ctrlPressed = false;
 	private Configuration config;
@@ -30,6 +33,7 @@ public class GlobalKeyListener implements NativeKeyListener
 	public void nativeKeyPressed(NativeKeyEvent arg0)
 	{
 		lastKeyPressed = arg0.getKeyCode();
+		log.debug("Keycode of last key pressed: " + lastKeyPressed);
 		if (arg0.getKeyCode() == NativeKeyEvent.VC_ESCAPE)
 		{
 			g.prime(false);
