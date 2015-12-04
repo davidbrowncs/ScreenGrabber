@@ -24,44 +24,40 @@ import org.jnativehook.keyboard.NativeKeyEvent;
 
 import fileHandling.Configuration;
 
-public class OptionsPane extends JPanel
-{
-	private static MyLogger log = new MyLogger(OptionsPane.class);
+public class OptionsPane extends JPanel {
+
+	private static final long serialVersionUID = 3537472099730924158L;
+
+	private static Log log = new Log(OptionsPane.class);
 
 	private Configuration config;
-	private JCheckBox chckbxPeriodicBackup = null;
+	private JCheckBox chckbxBackup = null;
 	private GlobalKeyListener listener;
 
 	/**
 	 * Create the panel.
 	 */
-	public OptionsPane(Configuration c, GlobalKeyListener listener)
-	{
+	public OptionsPane(Configuration c, GlobalKeyListener listener) {
 		this.config = c;
 		this.listener = listener;
 		init();
 	}
 
-	private void init()
-	{
+	private void init() {
 		this.setPreferredSize(new Dimension(250, 250));
 		setLayout(new MigLayout("", "[194.00,grow]", "[grow][grow][grow][grow][][grow][grow]"));
 		ButtonGroup group = new ButtonGroup();
 
 		JRadioButton rdbtnPeriodicBackup = new JRadioButton("Periodic Backup");
-		if (config.isPeriodicBackup())
-		{
+		if (config.isPeriodicBackup()) {
 			log.debug("Setting periodic backup radio button selected");
 			rdbtnPeriodicBackup.setSelected(true);
 		}
-		rdbtnPeriodicBackup.addActionListener((e) ->
-		{
-			if (chckbxPeriodicBackup.isSelected())
-			{
+		rdbtnPeriodicBackup.addActionListener(e -> {
+			if (chckbxBackup.isSelected()) {
 				config.setPeriodicBackup(rdbtnPeriodicBackup.isSelected());
 				config.setImmediateBackup(false);
-			} else
-			{
+			} else {
 				group.clearSelection();
 				config.setPeriodicBackup(false);
 			}
@@ -70,19 +66,15 @@ public class OptionsPane extends JPanel
 		add(rdbtnPeriodicBackup, "cell 0 1,alignx center");
 
 		JRadioButton rdbtnImmediateBackup = new JRadioButton("Immediate backup");
-		if (config.isImmediateBackup())
-		{
+		if (config.isImmediateBackup()) {
 			rdbtnImmediateBackup.setSelected(true);
 		}
-		rdbtnImmediateBackup.addActionListener((e) ->
-		{
-			if (chckbxPeriodicBackup.isSelected())
-			{
+		rdbtnImmediateBackup.addActionListener(e -> {
+			if (chckbxBackup.isSelected()) {
 				config.setImmediateBackup(rdbtnImmediateBackup.isSelected());
 				config.setPeriodicBackup(false);
 
-			} else
-			{
+			} else {
 				group.clearSelection();
 				config.setImmediateBackup(false);
 			}
@@ -90,30 +82,24 @@ public class OptionsPane extends JPanel
 		});
 		add(rdbtnImmediateBackup, "cell 0 2,alignx center");
 
-		chckbxPeriodicBackup = new JCheckBox("Backup Images?");
-		if (config.isImmediateBackup() || config.isPeriodicBackup())
-		{
-			chckbxPeriodicBackup.setSelected(true);
-		} else
-		{
-			chckbxPeriodicBackup.setSelected(false);
-			rdbtnImmediateBackup.setSelected(false);
-			rdbtnPeriodicBackup.setSelected(false);
+		chckbxBackup = new JCheckBox("Backup Images?");
+		if (config.isImmediateBackup() || config.isPeriodicBackup()) {
+			chckbxBackup.setSelected(true);
+		} else {
+			chckbxBackup.setSelected(false);
+			group.clearSelection();
 		}
-		chckbxPeriodicBackup.addActionListener((e) ->
-		{
-			if (chckbxPeriodicBackup.isSelected())
-			{
+		chckbxBackup.addActionListener(e -> {
+			if (chckbxBackup.isSelected()) {
 				rdbtnImmediateBackup.setSelected(true);
 				rdbtnPeriodicBackup.setSelected(false);
-			} else
-			{
+			} else {
 				group.clearSelection();
 			}
-			config.setImmediateBackup(rdbtnPeriodicBackup.isSelected());
+			config.setPeriodicBackup(rdbtnPeriodicBackup.isSelected());
 			config.setImmediateBackup(rdbtnImmediateBackup.isSelected());
 		});
-		add(chckbxPeriodicBackup, "cell 0 0,alignx center");
+		add(chckbxBackup, "cell 0 0,alignx center");
 
 		NumberFormatter format = new NumberFormatter();
 		format.setOverwriteMode(true);
@@ -123,11 +109,9 @@ public class OptionsPane extends JPanel
 		format.setFormat(f);
 		format.setAllowsInvalid(false);
 		JFormattedTextField frmtdtxtfldBackupPeriod = new JFormattedTextField(format);
-		frmtdtxtfldBackupPeriod.addActionListener((e) ->
-		{
+		frmtdtxtfldBackupPeriod.addActionListener(e -> {
 			int delay = Integer.parseInt(frmtdtxtfldBackupPeriod.getText().trim());
-			if (delay > 0 && delay <= 60)
-			{
+			if (delay > 0 && delay <= 60) {
 				log.info("Periodic backup delay set to: " + (delay * 1000));
 				config.setBackupDelay(delay * 1000);
 			}
@@ -145,31 +129,25 @@ public class OptionsPane extends JPanel
 		add(lblCurrentKey, "cell 0 5,alignx center");
 
 		JButton btnSetActionKey = new JButton("Set Action Key");
-		btnSetActionKey.addActionListener((e) ->
-		{
+		btnSetActionKey.addActionListener((e) -> {
 			final int prev = listener.getLastKeyPressed();
-			Thread t = new Thread(new Runnable()
-			{
+			Thread t = new Thread(new Runnable() {
 				volatile int newCode;
 
 				@Override
-				public void run()
-				{
+				public void run() {
 					newCode = prev;
 					log.debug("Previous key code: " + prev);
-					while (true)
-					{
+					while (true) {
 						newCode = listener.getLastKeyPressed();
-						if (newCode != prev)
-						{
+						if (newCode != prev) {
 							break;
 						}
 					}
 					log.debug("New key code: " + newCode);
 					config.setOperatorKey(newCode);
 					final int theKeyCode = newCode;
-					SwingUtilities.invokeLater(() ->
-					{
+					SwingUtilities.invokeLater(() -> {
 						log.debug("Setting key text: " + NativeKeyEvent.getKeyText(theKeyCode));
 						lblCurrentKey.setText("Current key: " + NativeKeyEvent.getKeyText(theKeyCode));
 					});
@@ -180,40 +158,30 @@ public class OptionsPane extends JPanel
 		add(btnSetActionKey, "cell 0 6,alignx center");
 	}
 
-	class JTextFieldLimit extends PlainDocument
-	{
+	public Configuration getConfig() {
+		return config;
+	}
+
+	class JTextFieldLimit extends PlainDocument {
+
+		private static final long serialVersionUID = 3688582678894283819L;
+
 		private int limit;
 
-		JTextFieldLimit(int limit)
-		{
-			super();
-			this.limit = limit;
-		}
-
-		JTextFieldLimit(int limit, boolean upper)
-		{
+		private JTextFieldLimit(int limit) {
 			super();
 			this.limit = limit;
 		}
 
 		@Override
-		public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException
-		{
-			if (str == null)
-			{
+		public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
+			if (str == null) {
 				return;
 			}
 
-			if ((getLength() + str.length()) <= limit)
-			{
+			if ((getLength() + str.length()) <= limit) {
 				super.insertString(offset, str, attr);
 			}
 		}
 	}
-
-	public Configuration getConfig()
-	{
-		return config;
-	}
-
 }

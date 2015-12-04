@@ -4,13 +4,13 @@ package listening;
 import org.jnativehook.keyboard.NativeKeyEvent;
 import org.jnativehook.keyboard.NativeKeyListener;
 
-import app.MyLogger;
+import app.Log;
 import app.ScreenGetter;
 import fileHandling.Configuration;
 
 public class GlobalKeyListener implements NativeKeyListener
 {
-	private MyLogger log = new MyLogger(GlobalKeyListener.class);
+	private Log log = new Log(GlobalKeyListener.class);
 
 	private ScreenGetter g;
 	private boolean ctrlPressed = false;

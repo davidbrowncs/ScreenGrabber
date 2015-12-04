@@ -13,128 +13,106 @@ import org.jnativehook.GlobalScreen;
 
 import fileHandling.PathGetter;
 
-public class MyLogger
-{
+public class Log {
 	private Logger log;
 	private String className;
 	private static boolean formatSet = false;
+	private static final Level level = Level.INFO;
 
-	public static final String logFile = "/log.txt";
-
-	public MyLogger(String className)
-	{
+	public Log(String className) {
 		this.className = className;
 		log = getLogger(className);
 	}
 
-	public MyLogger(Class<?> c)
-	{
+	public Log(Class<?> c) {
 		log = getLogger(c);
 	}
 
-	private static Logger getLogger(String className)
-	{
+	private static Logger getLogger(String className) {
 		Logger logger = Logger.getLogger(className);
 		logger.setLevel(Level.ALL);
 		return formatLogger(logger);
 	}
 
-	public Handler[] getHandlers()
-	{
+	public Handler[] getHandlers() {
 		return log.getHandlers();
 	}
 
-	private static Logger getLogger(Class<?> c)
-	{
+	private static Logger getLogger(Class<?> c) {
 		return getLogger(c.getName());
 	}
 
-	public void severe(String message)
-	{
+	public void severe(String message) {
 		log.logp(Level.SEVERE, className, getMethodName(), message);
 	}
 
-	public void severe(String message, Object obj)
-	{
+	public void severe(String message, Object obj) {
 		log.logp(Level.SEVERE, className, getMethodName(), message, obj);
 	}
 
-	public void warning(String message)
-	{
+	public void warning(String message) {
 		log.logp(Level.WARNING, className, getMethodName(), message);
 	}
 
-	public void warning(String message, Object obj)
-	{
+	public void warning(String message, Object obj) {
 		log.logp(Level.WARNING, className, getMethodName(), message, obj);
 	}
 
-	public void info(String message)
-	{
+	public void info(String message) {
 		log.logp(Level.INFO, className, getMethodName(), message);
 	}
 
-	public void info(String message, Object obj)
-	{
+	public void info(String message, Object obj) {
 		log.logp(Level.INFO, message, className, getMethodName(), obj);
 	}
 
-	public void debug(String message)
-	{
+	public void debug(String message) {
 		log.logp(Level.FINE, className, getMethodName(), message);
 	}
 
-	public void debug(String message, Object obj)
-	{
+	public void debug(String message, Object obj) {
 		log.logp(Level.FINE, className, getMethodName(), message, obj);
 	}
 
-	private String getMethodName()
-	{
+	private String getMethodName() {
 		return Thread.currentThread().getStackTrace()[3].getMethodName();
 	}
 
-	private static Logger formatLogger(Logger logger)
-	{
-		if (!formatSet)
-		{
-			try
-			{
+	private static Logger formatLogger(Logger logger) {
+		if (!formatSet) {
+			try {
 				Logger log = LogManager.getLogManager().getLogger("");
-				for (Handler h : log.getHandlers())
-				{
+				for (Handler h : log.getHandlers()) {
 					log.removeHandler(h);
 				}
+
+				log.setLevel(level);
 
 				Logger hookLogger = Logger.getLogger(GlobalScreen.class.getPackage().getName());
 				hookLogger.setLevel(Level.OFF);
 
-				FileHandler handler = new FileHandler(PathGetter.getSavePath() + logFile, false);
+				FileHandler handler = new FileHandler(PathGetter.getLoggingPath(), false);
 				handler.setFormatter(new SingleLineFormatter());
-				handler.setLevel(Level.ALL);
+				handler.setLevel(level);
 				log.addHandler(handler);
 
 				ConsoleHandler h = new ConsoleHandler();
-				h.setLevel(Level.ALL);
+				h.setLevel(level);
 				h.setFormatter(new SingleLineFormatter());
 				log.addHandler(h);
 				formatSet = true;
 				return logger;
-			} catch (SecurityException | IOException e)
-			{
+			} catch (SecurityException | IOException e) {
 				logger.logp(Level.WARNING, "MyLogger", "formatLogger", "Exception thrown when modifying logger", e);
 			}
 			return logger;
-		} else
-		{
+		} else {
 			return logger;
 		}
 	}
 
-	public static void close()
-	{
-		for (Handler h : Logger.getLogger("").getHandlers())
-		{
+	public static void close() {
+		for (Handler h : Logger.getLogger("").getHandlers()) {
 			h.close();
 		}
 	}

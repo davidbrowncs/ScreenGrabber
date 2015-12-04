@@ -23,15 +23,12 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -47,19 +44,16 @@ import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 
 import fileHandling.Configuration;
-import fileHandling.DumpSender;
 import fileHandling.FileHandler;
-import fileHandling.ImageWriter;
 
-public class ScreenGetter implements ClipboardOwner
-{
-	private static final MyLogger log = new MyLogger(ScreenGetter.class);
+public class ScreenGetter implements ClipboardOwner {
+	private static final Log log = new Log(ScreenGetter.class);
 
 	private ArrayList<JWindow> windows = new ArrayList<>();
 	private boolean frameVisible;
 	private Object frameVisibleLock = new Object();
 
-	private MyRectangle rect = null;
+	private Rect rect = null;
 	private BufferedImage img;
 	private JPanel debugPanel;
 
@@ -75,8 +69,7 @@ public class ScreenGetter implements ClipboardOwner
 
 	private GlobalKeyListener listener;
 
-	public ScreenGetter(boolean debug) throws Exception
-	{
+	public ScreenGetter(boolean debug) {
 		addShutdownHook();
 		this.debugMode = debug;
 		log.info("Starting up");
@@ -87,78 +80,62 @@ public class ScreenGetter implements ClipboardOwner
 		init();
 	}
 
-	private void addShutdownHook()
-	{
-		Runtime.getRuntime().addShutdownHook(new Thread(() ->
-		{
-			MyLogger.close();
+	private void addShutdownHook() {
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			Log.close();
 		}));
 	}
 
-	public ScreenGetter() throws Exception
-	{
+	public ScreenGetter() {
 		this(false);
 	}
 
-	public boolean primed()
-	{
+	public boolean primed() {
 		return primed;
 	}
 
-	private void setLookAndFeel()
-	{
-		try
-		{
+	private void setLookAndFeel() {
+		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
-		{
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
 			log.warning("Could not set the look and feel");
 		}
 	}
 
-	private boolean periodicBackupRunning()
-	{
-		synchronized (periodicBackupRunningLock)
-		{
+	private boolean periodicBackupRunning() {
+		synchronized (periodicBackupRunningLock) {
 			log.debug("Periodic backup running: ", periodicBackupRunning);
 			return periodicBackupRunning;
 		}
 	}
 
-	private void setPeriodicBackupRunning(boolean b)
-	{
-		synchronized (periodicBackupRunningLock)
-		{
+	private void setPeriodicBackupRunning(boolean b) {
+		synchronized (periodicBackupRunningLock) {
 			periodicBackupRunning = b;
 		}
 	}
 
-	public void prime(boolean b)
-	{
+	public void prime(boolean b) {
 		this.primed = b;
 	}
 
-	public static void main(String[] args)
-	{
-		try
-		{
-			ScreenGetter g = new ScreenGetter(false);
-		} catch (Exception e)
-		{
-			log.severe("Unexpected exception caught: " + e.getMessage());
-			new DumpSender(e);
-		}
+	public static void main(String[] args) {
+		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+			@Override
+			public void uncaughtException(Thread t, Throwable e) {
+				log.severe("Unexpected exception caught: " + Arrays.toString(e.getStackTrace()));
+				new LogDumpPanel(FileHandler.readLog());
+			}
+		});
+		new ScreenGetter(false);
 
 	}
 
-	private void addListeners()
-	{
+	private void addListeners() {
 		listener = new GlobalKeyListener(this, configuration);
-		try
-		{
+		try {
 			GlobalScreen.registerNativeHook();
-		} catch (NativeHookException e)
-		{
+		} catch (NativeHookException e) {
 			e.printStackTrace();
 		}
 		MouseListener m = new MouseListener(this);
@@ -169,57 +146,44 @@ public class ScreenGetter implements ClipboardOwner
 		log.info("Listeners added");
 	}
 
-	public void createRect(int x, int y)
-	{
-		rect = new MyRectangle(x, y);
+	public void createRect(int x, int y) {
+		rect = new Rect(x, y);
 	}
 
-	public void hideWindow()
-	{
-		SwingUtilities.invokeLater(() ->
-		{
+	public void hideWindow() {
+		SwingUtilities.invokeLater(() -> {
 			log.debug("Hiding windows");
-			for (JWindow window : windows)
-			{
+			for (JWindow window : windows) {
 				window.setVisible(false);
 			}
 		});
 	}
 
-	public void setWindowVisible()
-	{
-		SwingUtilities.invokeLater(() ->
-		{
+	public void setWindowVisible() {
+		SwingUtilities.invokeLater(() -> {
 			log.debug("Setting the windows visible");
-			for (JWindow window : windows)
-			{
+			for (JWindow window : windows) {
 				window.setVisible(true);
 			}
 		});
 	}
 
-	private boolean windowVisible()
-	{
-		synchronized (frameVisibleLock)
-		{
+	private boolean windowVisible() {
+		synchronized (frameVisibleLock) {
 			return frameVisible;
 		}
 	}
 
-	public void releaseRect()
-	{
+	public void releaseRect() {
 		log.debug("Rectangle reset");
 		rect = null;
 	}
 
 	@Override
-	public void lostOwnership(Clipboard clipboard, Transferable contents)
-	{}
+	public void lostOwnership(Clipboard clipboard, Transferable contents) {}
 
-	public void toClipboard()
-	{
-		while (windowVisible())
-		{}
+	public void toClipboard() {
+		while (windowVisible()) {}
 		captureImage();
 		TransferableImage trans = new TransferableImage(img);
 		Clipboard c = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -228,77 +192,61 @@ public class ScreenGetter implements ClipboardOwner
 
 		log.debug("Added image to list: ", img);
 
-		if (configuration.isImmediateBackup())
-		{
+		if (configuration.isImmediateBackup()) {
 			log.debug("Immediately writing image to file system");
-			executor.execute(() ->
-			{
-				ImageWriter.writeImage(configuration, img);
+			executor.execute(() -> {
+				FileHandler.writeImage(configuration, img);
 				imageHistory.remove(img);
 			});
 		}
 
-		if (configuration.isPeriodicBackup() && !periodicBackupRunning())
-		{
+		if (configuration.isPeriodicBackup() && !periodicBackupRunning()) {
 			log.debug("Starting periodic backing up, as the configuration must have changed");
 			executor.execute(periodicBackupTask);
 			setPeriodicBackupRunning(true);
 		}
 
-		if (debugMode)
-		{
+		if (debugMode) {
 			debugPanel.repaint();
 		}
 	}
 
-	private void captureImage()
-	{
+	private void captureImage() {
 		Rectangle screenRect = rect.getRect();
 		BufferedImage capture = null;
-		if (screenRect.getWidth() <= 0 || screenRect.getHeight() <= 0)
-		{
+		if (screenRect.getWidth() <= 0 || screenRect.getHeight() <= 0) {
 			return;
 		}
-		try
-		{
+		try {
 			capture = new Robot().createScreenCapture(screenRect);
-		} catch (AWTException e)
-		{
+		} catch (AWTException e) {
 			log.warning("Was unable to capture image from screen", e);
 		}
 		img = capture;
 	}
 
-	public void updateRectangle(int x, int y)
-	{
+	public void updateRectangle(int x, int y) {
 		rect.setUpdatingX(x);
 		rect.setUpdatingY(y);
 		log.debug("Updating rectangle: X: " + x + " Y: " + y);
-		if (windowVisible())
-		{
+		if (windowVisible()) {
 			log.debug("Repainting windows");
-			for (JWindow window : windows)
-			{
+			for (JWindow window : windows) {
 				window.repaint();
 			}
 		}
 	}
 
 	@SuppressWarnings("serial")
-	private void init() throws Exception
-	{
-		if (debugMode)
-		{
+	private void init() {
+		if (debugMode) {
 			log.debug("Creating debug window");
 			JFrame debugFrame = new JFrame("Debug");
-			debugPanel = new JPanel()
-			{
+			debugPanel = new JPanel() {
 				@Override
-				public void paintComponent(Graphics g)
-				{
+				public void paintComponent(Graphics g) {
 					super.paintComponent(g);
-					if (img != null)
-					{
+					if (img != null) {
 						g.drawImage(img, 0, 0, this.getWidth(), this.getHeight(), null);
 					}
 				}
@@ -313,37 +261,29 @@ public class ScreenGetter implements ClipboardOwner
 		imageHistory = Collections.synchronizedList(new ArrayList<BufferedImage>());
 		new SystemTrayRunner(configuration, listener);
 
-		periodicBackupTask = new Runnable()
-		{
+		periodicBackupTask = new Runnable() {
 			@Override
-			public void run()
-			{
-				while (configuration.isPeriodicBackup())
-				{
-					for (BufferedImage img : imageHistory)
-					{
-						ImageWriter.writeImage(configuration, img);
+			public void run() {
+				while (configuration.isPeriodicBackup()) {
+					for (BufferedImage img : imageHistory) {
+						FileHandler.writeImage(configuration, img);
 					}
 
-					for (int i = imageHistory.size() - 1; i >= 0; i--)
-					{
+					for (int i = imageHistory.size() - 1; i >= 0; i--) {
 						imageHistory.remove(i);
 					}
 
-					try
-					{
+					try {
 						Thread.sleep(configuration.getBackupDelay());
-					} catch (InterruptedException e)
-					{
-						log.warning("Periodic backup was interrupted on line 331");
+					} catch (InterruptedException e) {
+						log.warning("Periodic backup was interrupted");
 					}
 				}
 				setPeriodicBackupRunning(false);
 			}
 		};
 
-		if (configuration.isPeriodicBackup())
-		{
+		if (configuration.isPeriodicBackup()) {
 			log.info("Periodic backup task started");
 			executor.execute(periodicBackupTask);
 		}
@@ -351,23 +291,18 @@ public class ScreenGetter implements ClipboardOwner
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 		GraphicsDevice[] gs = ge.getScreenDevices();
 		log.info(gs.length + " screen devices found");
-		for (GraphicsDevice device : gs)
-		{
+		for (GraphicsDevice device : gs) {
 			GraphicsConfiguration[] gcs = device.getConfigurations();
-			for (GraphicsConfiguration gc : gcs)
-			{
+			for (GraphicsConfiguration gc : gcs) {
 				Rectangle bounds = gc.getBounds();
 
-				JWindow window = new JWindow()
-				{
+				JWindow window = new JWindow() {
 					private double xOffset = bounds.getX();
 					private double yOffset = bounds.getY();
 
 					@Override
-					public void paint(Graphics gr)
-					{
-						if (rect != null)
-						{
+					public void paint(Graphics gr) {
+						if (rect != null) {
 							super.paint(gr);
 							Graphics2D g = (Graphics2D) gr.create();
 							Rectangle r = rect.getRect();
@@ -392,8 +327,7 @@ public class ScreenGetter implements ClipboardOwner
 					}
 
 					@Override
-					public void update(Graphics g)
-					{
+					public void update(Graphics g) {
 						paint(g);
 					}
 				};
@@ -401,56 +335,44 @@ public class ScreenGetter implements ClipboardOwner
 				window.setAlwaysOnTop(true);
 				window.setBounds(bounds);
 				window.setBackground(new Color(100, 100, 100, 100));
-				window.addComponentListener(new ComponentAdapter()
-				{
+				window.addComponentListener(new ComponentAdapter() {
 					@Override
-					public void componentHidden(ComponentEvent e)
-					{
-						synchronized (frameVisibleLock)
-						{
+					public void componentHidden(ComponentEvent e) {
+						synchronized (frameVisibleLock) {
 							frameVisible = false;
 						}
 
 					}
 
 					@Override
-					public void componentShown(ComponentEvent e)
-					{
-						synchronized (frameVisibleLock)
-						{
+					public void componentShown(ComponentEvent e) {
+						synchronized (frameVisibleLock) {
 							frameVisible = true;
 						}
 					}
 				});
 			}
 		}
-		throw new Exception("This is a test");
 	}
 
-	private class TransferableImage implements Transferable
-	{
-		Image i;
+	private class TransferableImage implements Transferable {
+		private Image i;
 
-		public TransferableImage(Image i)
-		{
+		public TransferableImage(Image i) {
 			this.i = i;
 		}
 
 		@Override
-		public DataFlavor[] getTransferDataFlavors()
-		{
+		public DataFlavor[] getTransferDataFlavors() {
 			DataFlavor[] flavors = new DataFlavor[1];
 			flavors[0] = DataFlavor.imageFlavor;
 			return flavors;
 		}
 
 		@Override
-		public boolean isDataFlavorSupported(DataFlavor flavor)
-		{
-			for (DataFlavor f : getTransferDataFlavors())
-			{
-				if (flavor.equals(f))
-				{
+		public boolean isDataFlavorSupported(DataFlavor flavor) {
+			for (DataFlavor f : getTransferDataFlavors()) {
+				if (flavor.equals(f)) {
 					return true;
 				}
 			}
@@ -458,13 +380,10 @@ public class ScreenGetter implements ClipboardOwner
 		}
 
 		@Override
-		public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException
-		{
-			if (flavor.equals(DataFlavor.imageFlavor) && i != null)
-			{
+		public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
+			if (flavor.equals(DataFlavor.imageFlavor) && i != null) {
 				return i;
-			} else
-			{
+			} else {
 				throw new UnsupportedFlavorException(flavor);
 			}
 		}

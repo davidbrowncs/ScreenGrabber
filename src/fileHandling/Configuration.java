@@ -8,16 +8,16 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.jnativehook.keyboard.NativeKeyEvent;
 
-import app.MyLogger;
+import app.Log;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Configuration
 {
-	private static MyLogger log = new MyLogger(Configuration.class);
+	private static Log log = new Log(Configuration.class);
 
 	private static final String CONFIGURATION_FILE_NAME = "config.xml";
-	private static final String CONFIG_PATH = PathGetter.getSavePath() + "/" + CONFIGURATION_FILE_NAME;
+	private static final String CONFIG_PATH = PathGetter.getSettingsPath() + "/" + CONFIGURATION_FILE_NAME;
 
 	// Default versions of variables user can change
 	private static final long DEFAULT_DELAY = 30000;
@@ -32,10 +32,10 @@ public class Configuration
 	@XmlElement(name = "periodicBackup")
 	private boolean periodicBackup;
 
-	@XmlElement(name = "backupPath")
+	@XmlElement(name = "immediateBackup")
 	private boolean immediateBackup;
 
-	@XmlElement(name = "immediateBackup")
+	@XmlElement(name = "backupPath")
 	private String backupPath;
 
 	@XmlElement(name = "operatorKey")

@@ -1,14 +1,14 @@
 package app;
 import java.awt.Rectangle;
 
-public class MyRectangle
+public class Rect
 {
 	private int startX;
 	private int startY;
 	private int updatingX;
 	private int updatingY;
 
-	public MyRectangle(int x, int y)
+	public Rect(int x, int y)
 	{
 		this.startX = x;
 		this.startY = y;

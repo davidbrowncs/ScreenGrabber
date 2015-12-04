@@ -5,7 +5,7 @@ import org.jnativehook.mouse.NativeMouseEvent;
 import org.jnativehook.mouse.NativeMouseListener;
 import org.jnativehook.mouse.NativeMouseMotionListener;
 
-import app.MyLogger;
+import app.Log;
 import app.ScreenGetter;
 
 public class MouseListener implements NativeMouseListener, NativeMouseMotionListener
